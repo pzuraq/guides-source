@@ -1,3 +1,4 @@
+
 Now that we have our HTML and styles all figured out, we'll create our first
 component - the `ContactList`. This list is on the left hand side of our
 application, and should contain all of the contacts that are available to our
