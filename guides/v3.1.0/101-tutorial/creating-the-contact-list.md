@@ -1,81 +1,20 @@
+Now that we have the details and container components setup, let's make a list
+component that our users can use to search for contacts and select one to view.
+We'll begin by extracting the component from our HTML like we did before, and
+then we'll hook it up to receive our `contacts` array as an argument and
+communicate the user's selection to our details component.
 
-Now that we have our HTML and styles all figured out, we'll create our first
-component - the `ContactList`. This list is on the left hand side of our
-application, and should contain all of the contacts that are available to our
-user. But first, let's talk about what components are, and how we can use them
-to build applications.
+## Extracting the ContactList Component
 
-## What is a Component?
-
-Components are Ember's most fundamental construct. They are reusable,
-self-contained elements that have a template and optionally a backing class
-with any logic that is part of the component's functionality. You can think of
-components as extensions to HTML - they allow us to create our own custom tags
-like `<div>`, `<input>`, or `<select>`, with custom layouts, styles, and
-behaviors.
-
-You can tell whether or not something is a component by looking at it in your
-template. Components are invoked using capital-case notation in angle brackets:
-
-```handlebars
-<!-- standard HTML div -->
-<div>
-
-  <!-- standard HTML input -->
-  <input type="checkbox">
-
-  <!-- component -->
-  <CustomInput/>
-
-  <!-- block style component -->
-  <CustomButton>
-    Save
-  </CustomButton>
-
-</div>
-```
-
-Components allow us to break down our application into reusable and composeable
-parts, so we're not repeating ourselves constantly. They give us a way to
-encapsulate behavior and keep our code neat and organized.
-
-## Generating a Component
-
-We'll start by using Ember-CLI to generate a basic component for us. Run the
-generate command with `component` to get started:
-
-```sh
-ember generate component contact-list
-```
-
-or, for short:
+First, generate the component like before:
 
 ```sh
 ember g component contact-list
 ```
 
-Ember-CLI should create three files:
-
-```sh
-installing component
-  create app/components/contact-list.js
-  create app/templates/components/contact-list.hbs
-installing component-test
-  create tests/integration/components/contact-list-test.js
-```
-
-The first two files are the template and the backing class for our component,
-and the last file is a basic test file. We'll return to testing later on, for
-the moment lets focus on the component.
-
-## Adding a Template
-
-Open up the component's template file at `app/templates/components/contact-list`.
-You should see one line only with `{{yield}}` in it. This is how components can
-use block form, which is when you pass a template to a component upon invocation
-(e.g. `<CustomButton>Foo</CustomButton>`). We'll return to this later, for now
-remove the `{{yield}}` helper and copy the markup for the contact list from the
-application template:
+Then open up the component's template file at
+`app/templates/components/contact-list.hbs` and copy the markup for the
+details section from the `ContactsContainer` template:
 
 ```handlebars {data-filename="app/templates/components/contact-list.hbs" data-diff="-1,+2,+3,+4,+5,+6,+7,+8,+9,+10,+11,+12,+13,+14,+15,+16,+17,+18"}
 {{yield}}
@@ -98,74 +37,9 @@ application template:
 </nav>
 ```
 
-And then remove the markup from the application template and replace it with the
-`<ContactList>` component:
+And replace that section in the `ContactsContainer` template with the component:
 
-```handlebars {data-filename="app/templates/application.hbs" data-diff="+2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-18,-19"}
-<div class="container">
-  <ContactList/>
-  <nav>
-    <input placeholder="search" />
-    <ul>
-      <li>
-        <a class="active">
-          <h4>Zoey</h4>
-          <p>zoey@emberjs.com</p>
-        </a>
-      </li>
-      <li>
-        <a>
-          <h4>Tomster</h4>
-          <p>tomster@emberjs.com</p>
-        </a>
-      </li>
-    </ul>
-  </nav>
-
-  ...
-</div>
-```
-
-Save your changes, and you should see the application rebuild and reload.
-Everything should appear the exact same as before, and if you inspect the DOM
-you'll find that our HTML has remained unchanged:
-
-This is because Ember is rendering the `ContactList` component in the
-application template, which puts _its_ template wherever we invoked it. Because
-the `ContactList` component only has a template right now, we don't see anything
-dynamic. It's just the HTML being inserted directly.
-
-Let's change that!
-
-First, lets add some data to our component. We'll add a couple of javascript
-objects that represent the contacts in the list, Zoey and Tomster. Open up the
-component file at `app/components/contact-list.js` and add a contacts array
-to the class:
-
-```js {data-filename="app/components/contact-list.js" data-diff="+4,+5,+6,+7,+8,+9,+10,+11,+12,+13"}
-import Component from '@ember/component';
-
-export default class ContactList extends Component {
-  contacts = [
-    {
-      name: 'Zoey',
-      email: 'zoey@emberjs.com',
-    },
-    {
-      name: 'Tomster',
-      email: 'tomster@emberjs.com',
-    },
-  ];
-}
-```
-
-Now, back in the template, we can loop over this array using the `{{each}}`
-helper. This helper recieves an array and a template, and loops over the array,
-repeating the template for each item in the array. It yields the item to the
-template, so we can dynamically insert the name and email properties of each
-item in the template, like so:
-
-```handlebars {data-filename="app/templates/components/contact-list.hbs" data-diff="-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,+16,+17,+18,+19,+20,+21,+22,+23"}
+```handlebars {data-filename="app/templates/components/contacts-container.hbs" data-diff="-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,+18"}
 <nav>
   <input placeholder="search" />
   <ul>
@@ -181,7 +55,37 @@ item in the template, like so:
         <p>tomster@emberjs.com</p>
       </a>
     </li>
-    {{#each this.contacts as |contact|}}
+  </ul>
+</nav>
+<ContactList/>
+
+{{#if selectedContact}}
+  <ContactDetails @contact={{selectedContact}} />
+{{else}}
+  Select a Contact
+{{/if}}
+```
+
+Great, now we have the framework for our list component set up. Next, we need
+to make the component's contact list items dynamic. We'll start by passing in
+our `contacts` array as an argument to the list, and we'll loop over the
+contacts argument with the `each` helper:
+
+```handlebars {data-filename="app/templates/components/contacts-container.hbs" data-diff="-1,+2"}
+<ContactList>
+<ContactList @contacts={{contacts}} />
+
+{{#if selectedContact}}
+  <ContactDetails @contact={{selectedContact}} />
+{{else}}
+  Select a Contact
+{{/if}}
+```
+```handlebars {data-filename="app/templates/components/contact-list.hbs" data-diff="+4,+5,+6,+7,+8,+9,+10,+11,-12,-13,-14,-15,-16,-17,-18,-19,-20,-21,-22,-23"}
+<nav>
+  <input placeholder="search" />
+  <ul>
+    {{#each @contacts as |contact|}}
       <li>
         <a>
           <h4>{{contact.name}}</h4>
@@ -189,97 +93,37 @@ item in the template, like so:
         </a>
       </li>
     {{/each}}
+    <li>
+      <a class="active">
+        <h4>Zoey</h4>
+        <p>zoey@emberjs.com</p>
+      </a>
+    </li>
+    <li>
+      <a>
+        <h4>Tomster</h4>
+        <p>tomster@emberjs.com</p>
+      </a>
+    </li>
   </ul>
 </nav>
 ```
 
-You should see the same output as before in your browser, only this time it's
-dynamic and based on data in your component. There will be one minor difference
-here, which is that the first contact will no longer have the `active` class
-applied to it. We'll come back to this later once we get the details component
-setup. In the meantime, let's add another contact to the list to see it update:
+Save and refresh, and you should see the same list as before, rendered using our
+`contacts` array from the `ContactsContainer` component. The only difference is
+that we're missing the `active` class from one of our items. We'll add that
+back in a moment, first let's go over the `{{each}}` helper.
 
-```js {data-filename="app/components/contact-list.js" data-diff="+13,+14,+15,+16"}
-import Component from '@ember/component';
+As you can see, the `{{each}}` helper takes an array of items and a template
+block, and repeats the block for each item in the array. The `as |contact|` part
+of the helper is known as a block parameter, which is the way that we receive
+the individual items to use in the template. Components and helpers can _yield_
+block parameters, similar to calling a callback function with parameters in
+Javascript. This is done with the `{{yield}}` helper which we've seen in the
+generated templates for our components before we started editing them.
 
-export default class ContactList extends Component {
-  contacts = [
-    {
-      name: 'Zoey',
-      email: 'zoey@emberjs.com',
-    },
-    {
-      name: 'Tomster',
-      email: 'tomster@emberjs.com',
-    },
-    {
-      name: 'Bob',
-      email: 'bob@emberjs.com',
-    },
-  ];
-}
-```
-
-You should now see "Bob" in the list of contacts:
-
-[pic]
-
-### What are these curlies?
-
-We already introduced components, which are one of the features of the
-Handlebars templating language and are marked by capital-cased elements (like
-`<ContactList>`), but in the template above we added three more concepts:
-
-1. **Helpers** like `{{each}}` are like components, but much simpler. They are
-are pure functions that take a number of arguments, and in some cases a
-template, and return any kind of output. They can be used to format numbers
-into currency, to perform boolean logic, to define objects or arrays, or to
-fetch data asynchronously.
-
-  Ember comes with a default set of helpers that include some basic operations,
-  like `{{each}}`, or `{{if}}` which allows us to conditionally render or hide
-  parts of a template. Helpers can receive primitive values (e.g.
-  `{{format-number 1234}}`) or variables, which can come from local variables
-  provided by yields (see below) or from the backing component class. In our
-  example, we pass `this.contacts` to the `{{each}}`, which refers to the
-  contacts field we declared in the component body.
-
-  When used with a template (also known as "block form"), helpers must be
-  invoked with a hashtag at the beginning (`{{#...}}`), and have a closing
-  helper (`{{/...}}`) at the end of the template block, similar to HTML.
-
-2. **Yielding**, which is the `as |contact|` part of the `{{#each}}`. Helpers
-and components can both yield values to their template block, giving users
-a public API that they can work with in their own usage of the component.
-
-  You can think of components like functions in this way, and yielding is like a
-  callback. It allows a higher level component to receive a child template and
-  call it where it chooses to fill in details, making components more reusable
-  and composeable:
-
-  ```js
-    fs.readFile('example.txt', {}, (err, data) => {
-      console.log(data);
-    });
-  ```
-  ```handlebars
-    <Dropdown as |close|>
-      <button onclick={{close}}>
-        Close
-      </button>
-    </Dropdown>
-  ```
-
-3. **Bindings** like `{{contact.name}}`. These render the value that they
-reference directly into the template, without any formatting, and update the
-value in the template as it changes. You'll notice that both of our bindings in
-this template refer to `contact`, which is a local variable yielded by
-`{{each}}`. Bindings can also refer directly to the component using `{{this}}`
-(e.g. `{{this.foo}}`)
-
-Alright, now we're dynamically rendering some HTML based on values in our
-Javascript! Next, let's add some functionality to that search bar so we can
-filter through contacts.
+Alright, now we're rendering our contacts list! Next, let's add some
+functionality to that search bar so we can filter through contacts.
 
 ## Adding Search Functionality
 
@@ -292,7 +136,7 @@ handles the details of this data binding for us:
   <input placeholder="search" />
   <Input placeholder="search" @value={{searchValue}} />
   <ul>
-    {{#each this.contacts as |contact|}}
+    {{#each @contacts as |contact|}}
       <li>
         <a>
           <h4>{{contact.name}}</h4>
@@ -304,53 +148,30 @@ handles the details of this data binding for us:
 </nav>
 ```
 
-Notice how we passed `placeholder` directly to the `Input` component, just like
-we passed it to the standard `input` element it replaced, but we added a `@` to
-the beginning of `@value`. Ember components can receive two different types of
-values: **attributes** and **arguments**.
-
-* **Attributes** are standard HTML attributes, and they are rendered directly
-in the component via the `...attributes` syntax. We'll learn more about this
-later, but in general attributes are meant to work just like standard HTML
-attributes such as `id`, `class`, `role`, aria attributes, data attributes, and
-more.
-
-* **Arguments** are values that are passed to the component instance. These can
-be any kind of value - strings, numbers, booleans, objects, etc. They are passed
-in and the component can use them directly and bind them in its template.
-
-The `Input` component receives a `@value` argument which it binds to the `input`
-tag in its template. This binding is bi-directional - when you update the value
-of the `input` tag, it is communicated upwards by the `Input` component and
-modified in the surrounding context (in this case, the `ContactList` component).
-It's absolutely possible to have a uni-directional binding, where updating a
-value in a child component will _not_ automatically update the parent component,
-but most often for HTML inputs bi-directional binding is the behavior we want,
-so `Input` implements it this way to save some boilerplate. We'll discuss
-uni-directional data flow (also known as Data Down, Actions Up) later on.
+Notice how we passed `placeholder` as an attribute, but `@value` as an argument,
+because as we mentioned earlier the `Input` component binds the value itself.
+This means that when you update the value of the `input` tag, it is communicated
+upwards by the `Input` component and modified in the surrounding context (in
+this case, the `ContactList` component). It's absolutely possible to have a
+component uni-directional bindings in its arguments, where updating a value in a
+child component will _not_  automatically update the parent component, but most
+often for HTML inputs bi-directional binding is the behavior we want, so `Input`
+implements it this way to save some boilerplate. We'll discuss uni-directional
+data flow (also known as Data Down, Actions Up) later on.
 
 Now that we have the search value in our component, we need to use it to
 actually filter the list. To do that, we'll use a computed property:
 
-```js {data-filename="app/components/contact-list.js" data-diff="+2,+20,+21,+22,+23,+24,+25,+26,+27,+28,+29,+30,+31"}
+```js {data-filename="app/components/contact-list.js" data-diff="+2,+5,+6,+7,+8,+9,+10,+11,+12,+13,+14,+15,+16,+17,+18,+19,+20,+21,+22"}
 import Component from '@ember/component';
 import { computed } from '@ember-decorators/object';
 
 export default class ContactList extends Component {
-  contacts = [
-    {
-      name: 'Zoey',
-      email: 'zoey@emberjs.com',
-    },
-    {
-      name: 'Tomster',
-      email: 'tomster@emberjs.com',
-    },
-    {
-      name: 'Bob',
-      email: 'bob@emberjs.com',
-    },
-  ];
+  /****** Arguments ******/
+  contacts = null;
+
+  /****** Properties ******/
+  searchValue = '';
 
   @computed('contacts', 'searchValue')
   get filteredContacts() {
@@ -367,14 +188,18 @@ export default class ContactList extends Component {
 }
 ```
 
-As you can see, `filteredContacts` is a standard class getter function, and it
-returns the `contacts` array filtered by the `searchValue`. The only unusual
-thing we've added here is the `@computed` decorator. This decorator memoizes the
-getter - it caches its value until one of the dependent keys passed to it (in
-this case, `'contacts'` and `'searchValue'`) changes. This way we don't do more
-work than we need to. It also allows Ember to know when a value has updated and
-when it needs to rerender, otherwise it wouldn't know to rerender the `each`
-loop when `searchValue` changes.
+As you can see, we've added `filteredContacts` as a standard class getter
+function which returns the `contacts` array filtered by the `searchValue`. We
+also added class fields for `contacts` and `searchValue`, but those are only
+there for us to remember that the values exist on the class, they don't change
+any of the functionality of those fields.
+
+The only unusual thing we've added here is the `@computed` decorator. This
+decorator memoizes the getter - it caches its value until one of the dependent
+keys passed to it (in this case, `'contacts'` and `'searchValue'`) changes. This
+way we don't do more work than we need to. It also allows Ember to know when a
+value has updated and when it needs to rerender, otherwise it wouldn't know to
+rerender the `each` loop when `searchValue` changes.
 
 Let's update the template to use our new `filteredContacts` property:
 
@@ -382,10 +207,10 @@ Let's update the template to use our new `filteredContacts` property:
 <nav>
   <Input placeholder="search" @value={{searchValue}} />
   <ul>
-    {{#each this.contacts as |contact|}}
+    {{#each @contacts as |contact|}}
     {{#each this.filteredContacts as |contact|}}
       <li>
-        <a class="active">
+        <a>
           <h4>{{contact.name}}</h4>
           <p>{{contact.email}}</p>
         </a>
@@ -396,7 +221,315 @@ Let's update the template to use our new `filteredContacts` property:
 ```
 
 Now, whenever we type a value into the search bar it should update the list to
-only show the contacts that match the value!
+only show the contacts that match the value! Now we have most of the
+functionality we wanted for our list, all that's left is adding navigation so
+users can select the contact they want to view.
 
-That's about it for our contact list component. Next, we'll create a details
-section that displays when a user selects a contact from the list.
+## Adding a Select Action
+
+We've talked about how we can use arguments to pass data to child components.
+They can also be used to send callback functions to children, so children can
+communicate upwards with their parents when things change or the user interacts
+with them. These callback functions are called "actions" in Ember, and we use
+the `{{action}}` helper to create them.
+
+Let's use actions to send a newly selected contact whenever the user clicks on
+a contact in the `ContactList`. First, we'll add a function to the component
+class:
+
+```js {data-filename="app/components/contact-list.js" data-diff="-2,+3,+8,+25,+26,+27,+28,+29,+30,+31"}
+import Component from '@ember/component';
+import { computed } from '@ember-decorators/object';
+import { action, computed } from '@ember-decorators/object';
+
+export default class ContactList extends Component {
+  /****** Arguments ******/
+  contacts = null;
+  onContactSelected = null;
+
+  /****** Properties ******/
+  searchValue = '';
+
+  @computed('contacts', 'searchValue')
+  get filteredContacts() {
+    // Turn the search string into a case-insensitive,
+    // regular expression so we can match without
+    // worrying about case
+    let searchRegex = new RegExp(this.searchValue, 'i');
+
+    return this.contacts.filter(contact => {
+      return searchRegex.test(contact.name)
+        || searchRegex.test(contact.email);
+    });
+  }
+
+  @action
+  contactSelected(contact) {
+    if (this.onContactSelected) {
+      this.onContactSelected(contact);
+    }
+  }
+}
+```
+
+Note that the function here is marked with the `@action` decorator. This tells
+Ember that we intend to use it as an action in our template. We also added a new
+argument, the `onContactSelected` argument which we expect to be a function. We
+do a check to make sure it exists, and if it does, we call it with the selected
+value.
+
+Now, let's hook up this function in our template. Since this is child-most
+component, we won't be passing our action down into another component. Instead,
+well use it as the click handler on our links:
+
+```handlebars {data-filename="app/templates/components/contact-list.hbs" data-diff="-6,+7"}
+<nav>
+  <Input placeholder="search" @value={{searchValue}} />
+  <ul>
+    {{#each this.filteredContacts as |contact|}}
+      <li>
+        <a>
+        <a onclick={{action this.contactSelected contact}}>
+          <h4>{{contact.name}}</h4>
+          <p>{{contact.email}}</p>
+        </a>
+      </li>
+    {{/each}}
+  </ul>
+</nav>
+```
+
+As you can see, we pass both the `contactSelected` action and the current
+`contact` from the `each` loop into the `{{action}}` helper. This binds the
+`contact` value to the function, so when it is called it passes it as the first
+parameter. The `onclick` attribute of the link will call the function using
+standard browser APIs - nothing special from Ember.
+
+Now, let's create another action in the `ContactsContainer` component to pass
+to the `ContactList` so it can set the `selectedContact` field.
+
+```js {data-filename="app/components/contacts-container.js" data-diff="+27,+28,+29,+30,+31"}
+import Component from '@ember/component';
+import { action } from '@ember-decorators/object';
+
+export default class ContactsContainer extends Component {
+  contacts = [
+    {
+      name: 'Zoey',
+      email: 'zoey@emberjs.com',
+      phone: '555-1232',
+      note: 'Met at EmberConf!',
+    },
+    {
+      name: 'Tomster',
+      email: 'tomster@emberjs.com',
+      phone: '555-1532',
+      note: 'Met at EmberCamp!',
+    },
+    {
+      name: 'Bob',
+      email: 'bob@emberjs.com',
+      phone: '555-6789',
+      note: 'Met at EmberFest!',
+    },
+  ];
+
+  selectedContact = null;
+
+  @action
+  setSelectedContact(contact) {
+    this.set('selectedContact', contact);
+  }
+}
+```
+
+One interesting thing to note here is that we use `this.set` to set the selected
+contact. `set` is a special function that notifies Ember when something is
+changing, letting it know that it may need to rerender. It also invalidates
+computed properties so they know to recalculate. Ember will generally let you
+know if you should be using `set` to set a field via a special dev-only
+assertion, so you won't accidentally assign a value using standard Javascript
+assignment (e.g. `this.selectedContact = contact`).
+
+Now in our template, we can update the `ContactList` component to take this new
+action:
+
+```handlebars {data-filename="app/templates/components/contacts-container.hbs" data-diff="-1,+2,+3,+4,+5"}
+<ContactList @contacts={{this.contacts}}/>
+<ContactList
+  @contacts={{this.contacts}}
+  @onContactSelected={{action this.setSelectedContact}}
+/>
+
+{{#if selectedContact}}
+  <ContactDetails @contact={{selectedContact}} />
+{{else}}
+  Select a Contact
+{{/if}}
+```
+
+You should now be able to click on a contact and see the details panel update!
+Note that we didn't pass any additional information to the action helper this
+time, we only needed to bind the `setSelectedContact` function. The
+`ContactList` component will pass the selected contact to the function when it
+is called.
+
+As you can imagine, updating a value like this is a pretty common workflow.
+Writing an action that sets a particular value is a fairly large amount of
+boilerplate, and Ember provides a special helper that allows us to cut down on
+this extra code - the `mut` helper. Let's replace the `setSelectedContact`
+action with `mut`:
+
+```js {data-filename="app/components/contacts-container.js" data-diff="-27,-28,-29,-30,-31"}
+import Component from '@ember/component';
+import { action } from '@ember-decorators/object';
+
+export default class ContactsContainer extends Component {
+  contacts = [
+    {
+      name: 'Zoey',
+      email: 'zoey@emberjs.com',
+      phone: '555-1232',
+      note: 'Met at EmberConf!',
+    },
+    {
+      name: 'Tomster',
+      email: 'tomster@emberjs.com',
+      phone: '555-1532',
+      note: 'Met at EmberCamp!',
+    },
+    {
+      name: 'Bob',
+      email: 'bob@emberjs.com',
+      phone: '555-6789',
+      note: 'Met at EmberFest!',
+    },
+  ];
+
+  selectedContact = null;
+
+  @action
+  setSelectedContact(contact) {
+    this.set('selectedContact', contact);
+  }
+}
+```
+```handlebars {data-filename="app/templates/components/contacts-container.hbs" data-diff="+3,-4"}
+<ContactList
+  @contacts={{this.contacts}}
+  @onContactSelected={{action (mut this.selectedContact)}}
+  @onContactSelected={{action this.setSelectedContact}}
+/>
+
+{{#if selectedContact}}
+  <ContactDetails @contact={{selectedContact}} />
+{{else}}
+  Select a Contact
+{{/if}}
+```
+
+If you save again, everything should work exactly as before. We're almost done,
+we just need to add back the active state to our contact list items.
+
+## Adding Active State
+
+When we converted our plain HTML into the `ContactList` component, we also lost
+the `active` class that was applied to one of the contacts. Now that we have
+selection logic all setup, we can add it back! First, lets add
+`@selectedContact` as an argument to `ContactList`, so we can tell it which
+contact to highlight:
+
+```handlebars {data-filename="app/templates/components/contacts-container.hbs" data-diff="+3"}
+<ContactList
+  @contacts={{this.contacts}}
+  @selectedContact={{selectedContact}}
+  @onContactSelected={{action (mut this.selectedContact)}}
+/>
+
+{{#if selectedContact}}
+  <ContactDetails @contact={{selectedContact}} />
+{{else}}
+  Select a Contact
+{{/if}}
+```
+```js {data-filename="app/components/contacts-list.js" data-diff="+8"}
+import Component from '@ember/component';
+import { computed } from '@ember-decorators/object';
+import { action, computed } from '@ember-decorators/object';
+
+export default class ContactList extends Component {
+  /****** Arguments ******/
+  contacts = null;
+  selectedContact = null;
+  onContactSelected = null;
+
+  /****** Properties ******/
+  searchValue = '';
+
+  @computed('contacts', 'searchValue')
+  get filteredContacts() {
+    // Turn the search string into a case-insensitive,
+    // regular expression so we can match without
+    // worrying about case
+    let searchRegex = new RegExp(this.searchValue, 'i');
+
+    return this.contacts.filter(contact => {
+      return searchRegex.test(contact.name)
+        || searchRegex.test(contact.email);
+    });
+  }
+
+  @action
+  contactSelected(contact) {
+    if (this.onContactSelected) {
+      this.onContactSelected(contact);
+    }
+  }
+}
+```
+
+Then, we'll add a class to the `contact` that is equal to `selectedContact`. In
+order to do that, we'll need to check if they are equal _in_ our Handlebars
+template. Handlebars does not provide operators like `===` by default, but
+helpers can be made for them. We'll use a community package that adds several
+helpers for basic comparisions,
+[ember-truth-helpers](https://github.com/jmurphyau/ember-truth-helpers). It
+specifically adds the `{{eq}}` helper, which is exactly what we're after.
+
+In the command line, use ember-cli to add the package to the app with
+`ember install`:
+
+```sh
+ember install ember-truth-helpers
+```
+
+This installs the package and saves it to `package.json`, along with running any
+additional setup code that the package needs.
+
+Now, back in the `ContactList` template, we can add the class by combining the
+`{{if}}` and `{{eq}}` helpers:
+
+```handlebars {data-filename="app/templates/components/contact-list.hbs" data-diff="-2,+3"}
+<nav>
+  <Input placeholder="search" @value={{searchValue}} />
+  <ul>
+    {{#each @contacts as |contact|}}
+      <li>
+        <a class="{{if (eq contact this.selectedContact) 'active'}}">
+          <h4>{{contact.name}}</h4>
+          <p>{{contact.email}}</p>
+        </a>
+      </li>
+    {{/each}}
+  </ul>
+</nav>
+```
+
+Notice that we are using the _inline_ form of the if statement, and embedding it
+directly in the `class` string. This allows us to very tersely add conditional
+classes, and add them as if they were any other value in the template. We could
+also add static classes alongside the `if` statement this way.
+
+Alright, now we have a fully functional contact list! Next, we'll update our
+list to fetch data from a remote server, and then we'll add that edit
+functionality to the details panel, allowing us to update data.
