@@ -11,7 +11,7 @@ Then we'll begin replacing this static HTML with components and connect to our d
 Let's add the following markup to `application.hbs`:
 
 ```handlebars {data-filename="app/templates/application.hbs"}
-<div class="container">
+<div class="content">
   <nav>
     <input placeholder="search" />
     <ul>
